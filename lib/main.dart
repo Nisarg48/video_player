@@ -1,14 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:icons_plus/icons_plus.dart';
-import './Pages/VideoPage.dart';
-import './Pages/PlaylistPage.dart';
-import './Pages/BrowsePage.dart';
-import './Pages/SettingPage.dart';
+import './Pages/video_page.dart';
+import './Pages/playlist_page.dart';
+import './Pages/browse_page.dart';
+import './Pages/setting_page.dart';
+import './Pages/splash_screen.dart';
 
 void main() {
-  runApp(const MaterialApp(
+  runApp(MaterialApp(
     debugShowCheckedModeBanner: false,
-    home: MyHomePage(),
+    home: const Splashscreen(),
+
+    themeMode: ThemeMode.dark,
+    theme: ThemeData.dark().copyWith(
+      primaryColor: Colors.blueAccent,
+      scaffoldBackgroundColor: Colors.black,
+      appBarTheme: const AppBarTheme(
+        color: Colors.transparent,
+        elevation: 0,
+      ),
+    ),
   ));
 }
 
@@ -39,26 +50,42 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.blue,
-        title: const Center(
-          child: Text(
-            "VideoPlayFlix",
-            style: TextStyle(
-              fontSize: 30,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 2.0,
-              color: Colors.black,
+        // backgroundColor: Colors.black,
+        title: const Row(
+          children: [
+            Image(
+              image: AssetImage('./assets/logo.png'),
+              width: 50,
+              height: 50,
             ),
-          ),
+            Text(
+              "VideoPlayFlix",
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.0,
+                // color: Colors.black,
+              ),
+            ),
+          ],
         ),
+
         actions: [
           IconButton(
-            onPressed: () {},
-            icon: const Icon(EvaIcons.search),
+              onPressed: () {},
+              icon: const Icon(EvaIcons.search)
           ),
+          IconButton(
+              onPressed: () {},
+              icon: const Icon(Bootstrap.three_dots_vertical)
+          )
         ],
       ),
-      body: _pages[_currentIndex],
+      
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        child: _pages[_currentIndex],
+      ),
       bottomNavigationBar: BottomNavBar(
         currentIndex: _currentIndex,
         onItemTapped: _onItemTapped,
@@ -79,23 +106,29 @@ class BottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return NavigationBar(
-      selectedIndex: currentIndex,
-      onDestinationSelected: onItemTapped,
-      destinations: const [
-        NavigationDestination(
+    return BottomNavigationBar(
+      currentIndex: currentIndex,
+      onTap: onItemTapped,
+      type: BottomNavigationBarType.fixed,
+      backgroundColor: Colors.grey[900],
+      selectedItemColor: Colors.cyanAccent,
+      unselectedItemColor: Colors.white54,
+      showSelectedLabels: true,
+      showUnselectedLabels: true,
+      items: const [
+        BottomNavigationBarItem(
           icon: Icon(FontAwesome.file_video_solid),
           label: 'Videos',
         ),
-        NavigationDestination(
+        BottomNavigationBarItem(
           icon: Icon(Icons.playlist_play_rounded),
           label: 'Playlist',
         ),
-        NavigationDestination(
+        BottomNavigationBarItem(
           icon: Icon(Bootstrap.folder),
           label: 'Browse',
         ),
-        NavigationDestination(
+        BottomNavigationBarItem(
           icon: Icon(Icons.settings),
           label: 'Setting',
         ),
@@ -103,3 +136,25 @@ class BottomNavBar extends StatelessWidget {
     );
   }
 }
+
+//
+// const TextField(
+// decoration: InputDecoration(
+// hintText: 'Search...',
+// hintStyle: TextStyle(color: Colors.white54),
+// border: InputBorder.none,
+// filled: true,
+// fillColor: Colors.white12,
+// contentPadding: EdgeInsets.symmetric(horizontal: 20),
+// prefixIcon: Icon(EvaIcons.search, color: Colors.white),
+// suffixIcon: Icon(EvaIcons.options_2_outline, color: Colors.white),
+// enabledBorder: OutlineInputBorder(
+// borderRadius: BorderRadius.all(Radius.circular(30)),
+// borderSide: BorderSide.none,
+// ),
+// focusedBorder: OutlineInputBorder(
+// borderRadius: BorderRadius.all(Radius.circular(30)),
+// borderSide: BorderSide.none,
+// ),
+// ),
+// ),

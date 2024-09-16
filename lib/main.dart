@@ -9,7 +9,7 @@ import './Pages/splash_screen.dart';
 void main() {
   runApp(MaterialApp(
     debugShowCheckedModeBanner: false,
-    home: const Splashscreen(),
+    home: const SplashScreen(),
 
     themeMode: ThemeMode.dark,
     theme: ThemeData.dark().copyWith(
@@ -81,7 +81,7 @@ class _MyHomePageState extends State<MyHomePage> {
           )
         ],
       ),
-      
+
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 300),
         child: _pages[_currentIndex],
@@ -136,25 +136,3 @@ class BottomNavBar extends StatelessWidget {
     );
   }
 }
-
-//
-// const TextField(
-// decoration: InputDecoration(
-// hintText: 'Search...',
-// hintStyle: TextStyle(color: Colors.white54),
-// border: InputBorder.none,
-// filled: true,
-// fillColor: Colors.white12,
-// contentPadding: EdgeInsets.symmetric(horizontal: 20),
-// prefixIcon: Icon(EvaIcons.search, color: Colors.white),
-// suffixIcon: Icon(EvaIcons.options_2_outline, color: Colors.white),
-// enabledBorder: OutlineInputBorder(
-// borderRadius: BorderRadius.all(Radius.circular(30)),
-// borderSide: BorderSide.none,
-// ),
-// focusedBorder: OutlineInputBorder(
-// borderRadius: BorderRadius.all(Radius.circular(30)),
-// borderSide: BorderSide.none,
-// ),
-// ),
-// ),

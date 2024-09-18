@@ -58,7 +58,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../main.dart';
 import 'permission_page.dart';
 
@@ -79,7 +78,7 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> _checkPermissionAndNavigate() async {
     await Future.delayed(const Duration(seconds: 2)); // Simulate loading
 
-    final status = await Permission.storage.status;
+    final status = await Permission.manageExternalStorage.status;
     final hasPermission = status.isGranted;
 
     if (hasPermission) {

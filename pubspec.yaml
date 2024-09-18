@@ -45,6 +45,12 @@ dependencies:
   file_manager: ^1.0.2
   #A Flutter plugin for finding commonly used locations on the filesystem.
   path_provider: ^2.1.4
+  #external_path is a flutter plugin that provides internal, external storage path and external public storage path.
+  external_path: ^2.0.1
+  #A package that allows you to use the native file explorer to pick single or multiple files, with extensions filtering support.
+  file_picker: ^8.1.2
+  #The plugin generates thumbnails from a video URL and set in in imageView.
+  video_thumbnail_imageview: ^0.0.6
 
 
 

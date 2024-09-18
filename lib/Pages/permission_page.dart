@@ -6,7 +6,7 @@ class PermissionPage extends StatelessWidget {
   const PermissionPage({super.key});
 
   Future<void> _requestPermission(BuildContext context) async {
-    final status = await Permission.storage.request();
+    final status = await Permission.manageExternalStorage.request();
 
     if (status.isGranted) {
       Navigator.pushReplacement(

@@ -1,107 +1,9 @@
-// import 'package:flutter/material.dart';
-// import 'package:permission_handler/permission_handler.dart';
-// import 'package:video_player/Pages/permission_page.dart';
-//
-// class VideoPage extends StatefulWidget {
-//   const VideoPage({super.key});
-//
-//   @override
-//   State<VideoPage> createState() => _VideoPageState();
-// }
-//
-// class _VideoPageState extends State<VideoPage> {
-//
-//   @override
-//   void initState() {
-//     super.initState();
-//     _checkPermission();
-//   }
-//
-//   Future<void> _checkPermission() async {
-//     final status = await Permission.storage.status;
-//     final granted = await Permission.storage.isGranted;
-//     print("Status : ${status}, Granted : ${granted}");
-//
-//     if(granted == false){
-//       Navigator.push(
-//         context,
-//         MaterialPageRoute(
-//             builder: (context) => PermissionPage()
-//         )
-//       );
-//     }
-//   }
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     return const Center(
-//       child: Text('Video Page Content', style: TextStyle(fontSize: 24)),
-//     );
-//   }
-// }
-
-// import 'package:flutter/material.dart';
-// import 'package:permission_handler/permission_handler.dart';
-//
-// class VideoPage extends StatefulWidget {
-//   const VideoPage({super.key});
-//
-//   @override
-//   State<VideoPage> createState() => _VideoPageState();
-// }
-//
-// class _VideoPageState extends State<VideoPage> {
-//   late Future<bool> _permissionStatus;
-//
-//   @override
-//   void initState() {
-//     super.initState();
-//     _permissionStatus = _checkPermission();
-//   }
-//
-//   Future<bool> _checkPermission() async {
-//     final status = await Permission.storage.status;
-//     return status.isGranted;
-//   }
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     return FutureBuilder<bool>(
-//       future: _permissionStatus,
-//       builder: (context, snapshot) {
-//         if (snapshot.connectionState == ConnectionState.waiting) {
-//           return const Center(child: CircularProgressIndicator());
-//         } else if (snapshot.hasError) {
-//           return const Center(child: Text('Error checking permission'));
-//         } else if (snapshot.hasData) {
-//           final isGranted = snapshot.data!;
-//           if (isGranted) {
-//             return const Center(
-//               child: Text('Video Page Content', style: TextStyle(fontSize: 24)),
-//
-//             );
-//           } else {
-//             return const Center(
-//               child: Text('Permission Denied', style: TextStyle(fontSize: 24)),
-//             );
-//           }
-//         } else {
-//           return const Center(child: Text('Unknown status'));
-//         }
-//       },
-//     );
-//   }
-// }
-
-
-// --------------------------------------------------------------------------
-// ------- Access Video List --------------------
-
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:external_path/external_path.dart';
 import 'package:video_thumbnail_imageview/video_thumbnail_imageview.dart';
+import 'video_player_screen.dart';
 
 class VideoPage extends StatefulWidget {
   const VideoPage({super.key});
@@ -214,8 +116,8 @@ class _VideoPageState extends State<VideoPage> {
 
     return GridView.builder(
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 1, // Number of columns
-        crossAxisSpacing: 2.0, // Horizontal spacing between items
+        crossAxisCount: 2, // Number of columns
+        crossAxisSpacing: 8.0, // Horizontal spacing between items
         mainAxisSpacing: 8.0, // Vertical spacing between items
         childAspectRatio: 16 / 9, // Aspect ratio of the grid items
       ),
@@ -227,23 +129,20 @@ class _VideoPageState extends State<VideoPage> {
 
         return GestureDetector(
           onTap: () {
-            // Play video using a video player package, such as `video_player`
-            print('Play video: $filePath');
+            // Navigate to VideoPlayerScreen when a video tile is tapped
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => VideoPlayerScreen(videoPath: filePath),
+              ),
+            );
           },
           child: Container(
             decoration: BoxDecoration(
               border: Border.all(
-                color: Colors.accents[index % Colors.accents.length], // Different border color for each item
-                width: 3.0, // Border thickness
+                color: Colors.accents[index % Colors.accents.length], // Different color for each item
+                width: 2.0, // Border thickness
               ),
-              borderRadius: BorderRadius.circular(12.0), // Rounded corners for video tiles
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.3), // Subtle shadow
-                  blurRadius: 5.0, // Shadow blur
-                  offset: const Offset(3, 3), // Shadow position
-                ),
-              ],
             ),
             child: GridTile(
               child: ClipRRect(
@@ -252,7 +151,7 @@ class _VideoPageState extends State<VideoPage> {
                   videoUrl: filePath,
                   errorBuilder: (context, error, stack) {
                     return Container(
-                      color: Colors.grey, // Placeholder background color
+                      // color: Colors.redAccent, // Placeholder background color
                       child: const Center(
                         child: Text(
                           "Thumbnail Error",
@@ -266,31 +165,23 @@ class _VideoPageState extends State<VideoPage> {
               ),
               footer: Container(
                 decoration: BoxDecoration(
-                  borderRadius: const BorderRadius.only(
-                    bottomLeft: Radius.circular(12.0),
-                    bottomRight: Radius.circular(12.0),
-                  ),
                   color: Colors.black.withOpacity(0.7),
                 ),
-                padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
+                padding: const EdgeInsets.symmetric(
+                                            vertical: 2.0,
+                                            horizontal: 3.0
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       fileName,
                       style: const TextStyle(
-                        fontSize: 16,
+                        fontSize: 14,
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
                       ),
                       overflow: TextOverflow.ellipsis,
-                    ),
-                    Text(
-                      '${(fileSize / (1024 * 1024)).toStringAsFixed(2)} MB',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Colors.white70,
-                      ),
                     ),
                   ],
                 ),

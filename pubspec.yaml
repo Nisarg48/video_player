@@ -1,4 +1,4 @@
-name: video_player
+name: VideoPlayFlix
 description: "A new Flutter project."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
@@ -51,6 +51,12 @@ dependencies:
   file_picker: ^8.1.2
   #The plugin generates thumbnails from a video URL and set in in imageView.
   video_thumbnail_imageview: ^0.0.6
+  #A Flutter plugin for iOS, Android and Web for playing back video on a Widget surface.
+  video_player: ^2.9.1
+  #Make text to move
+  marqueer: ^1.4.5
+
+
 
 
 

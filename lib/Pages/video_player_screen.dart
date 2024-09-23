@@ -32,6 +32,8 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   double _volume = 1.0;
   bool _controlsVisible = true; // Control visibility state
   bool _isPlaying = false; // Track playing state
+  bool _isError = false; // Track error state
+  bool _isInitialized = false; // Track initialization state
 
   @override
   void initState() {
@@ -43,17 +45,33 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
   void _initializeVideo() async {
     _videoPlayerController = VideoPlayerController.file(File(widget.videoPath));
-    await _videoPlayerController.initialize();
 
-    setState(() {
-      _chewieController = ChewieController(
-        videoPlayerController: _videoPlayerController,
-        autoPlay: false,
-        looping: true,
-        showControls: true,
-        placeholder: const Center(child: CircularProgressIndicator()),
-        errorBuilder: (context, error) => Center(child: Text(error.toString())),
-      );
+    // Initialize the video and listen for errors
+    try {
+      await _videoPlayerController.initialize();
+      setState(() {
+        _isInitialized = true;
+        _chewieController = ChewieController(
+          videoPlayerController: _videoPlayerController,
+          autoPlay: false,
+          looping: true,
+          showControls: true,
+          placeholder: const Center(child: CircularProgressIndicator()),
+        );
+      });
+    } catch (error) {
+      setState(() {
+        _isError = true; // Set error state
+      });
+      print('Error initializing video: $error');
+    }
+
+    _videoPlayerController.addListener(() {
+      if (_videoPlayerController.value.hasError) {
+        setState(() {
+          _isError = true; // Handle error state
+        });
+      }
     });
   }
 
@@ -106,18 +124,36 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   }
 
   void _playPauseVideo() {
-    setState(() {
-      _isPlaying = !_isPlaying;
-      if (_isPlaying) {
-        _videoPlayerController.play();
-      } else {
-        _videoPlayerController.pause();
-      }
-    });
+    if (_isInitialized) {
+      setState(() {
+        _isPlaying = !_isPlaying;
+        if (_isPlaying) {
+          _videoPlayerController.play();
+        } else {
+          _videoPlayerController.pause();
+        }
+      });
+    } else {
+      print('Video is not initialized yet.'); // Handle case where video is not ready
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_isError) {
+      return Scaffold(
+        body: Center(
+          child: Container(
+            color: Colors.red,
+            child: const Text(
+              'Error playing video',
+              style: TextStyle(color: Colors.white, fontSize: 24),
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       body: GestureDetector(
         onTap: () {
@@ -126,7 +162,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
         },
         child: Stack(
           children: [
-            if (_chewieController != null) // Check if ChewieController is initialized
+            if (_isInitialized) // Check if video is initialized
               Chewie(
                 controller: _chewieController,
               ),

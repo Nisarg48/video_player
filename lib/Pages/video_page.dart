@@ -2,8 +2,11 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:external_path/external_path.dart';
-import 'package:video_thumbnail_imageview/video_thumbnail_imageview.dart';
-import 'video_player_screen.dart';
+import 'package:video_thumbnail/video_thumbnail.dart';
+import 'package:path_provider/path_provider.dart';
+import './video_player_screen.dart';
+import '../Database/database_service.dart';
+import '../Model/video_model.dart';
 
 class VideoPage extends StatefulWidget {
   const VideoPage({super.key});
@@ -14,70 +17,116 @@ class VideoPage extends StatefulWidget {
 
 class _VideoPageState extends State<VideoPage> {
   late Future<bool> _permissionStatus;
-  List<FileSystemEntity> _videoFiles = [];
+  late Future<List<Video_Model>> _videoListFuture;
+  final DatabaseService _databaseService = DatabaseService();
+  bool _videosFetched = false;
 
   @override
   void initState() {
     super.initState();
     _permissionStatus = _checkPermission();
+    _videoListFuture = _fetchVideosFromDatabase(); // Initialize _videoListFuture
   }
 
   Future<bool> _checkPermission() async {
-    final status = await Permission.manageExternalStorage.status;
-    if (status.isGranted) {
-      await _fetchVideos();  // Fetch videos when permission is granted
-    } else {
-      // Handle permission denied case
-      setState(() {
-        _videoFiles = [];
-      });
-    }
+    final status = await Permission.manageExternalStorage.request();
     return status.isGranted;
   }
 
-  Future<void> _fetchVideos() async {
-    List<FileSystemEntity> videoFiles = [];
-
+  Future<void> _fetchVideosIfNeeded() async {
+    if (_videosFetched) return; // Prevent refetching
     try {
-      // Get external storage paths
-      String moviesPath = await ExternalPath.getExternalStoragePublicDirectory(ExternalPath.DIRECTORY_MOVIES);
-      String dcimPath = await ExternalPath.getExternalStoragePublicDirectory(ExternalPath.DIRECTORY_DCIM);
-      String downloadPath = await ExternalPath.getExternalStoragePublicDirectory(ExternalPath.DIRECTORY_DOWNLOADS);
+      List<Video_Model> videos = await _databaseService.getVideos();
 
-      // Check if the directories exist
-      if (Directory(moviesPath).existsSync()) {
-        videoFiles.addAll(_getVideoFilesFromDirectory(Directory(moviesPath)));
+      if (videos.isEmpty) {
+        await _fetchVideosFromLocalStorage();
+      } else {
+        await _fetchVideosFromLocalStorage(); // Optional: Refresh existing videos
       }
-      if (Directory(dcimPath).existsSync()) {
-        videoFiles.addAll(_getVideoFilesFromDirectory(Directory(dcimPath)));
-      }
-      if (Directory(downloadPath).existsSync()) {
-        videoFiles.addAll(_getVideoFilesFromDirectory(Directory(downloadPath)));
-      }
+      setState(() {
+        _videoListFuture = _fetchVideosFromDatabase();
+        _videosFetched = true; // Mark videos as fetched
+      });
     } catch (e) {
-      print("Error accessing storage: $e");
+      print('Error fetching videos: $e');
     }
-
-    setState(() {
-      _videoFiles = videoFiles;
-    });
   }
 
-  List<FileSystemEntity> _getVideoFilesFromDirectory(Directory directory) {
-    List<FileSystemEntity> videoFiles = [];
+  Future<void> _fetchVideosFromLocalStorage() async {
     try {
-      videoFiles = directory
-          .listSync()
-          .where((file) =>
-      file is File &&
-          (file.path.endsWith(".mp4") ||
-              file.path.endsWith(".mkv") ||
-              file.path.endsWith(".avi"))) // Add more video extensions as needed
-          .toList();
+      List<FileSystemEntity> videoFiles = await _getLocalVideos();
+      List<Video_Model> currentVideos = await _databaseService.getVideos();
+
+      // Remove non-existing videos
+      for (var video in currentVideos) {
+        if (!videoFiles.any((file) => file.path == video.path)) {
+          await _databaseService.deleteVideo(video.path);
+        }
+      }
+
+      // Add new videos to the database
+      for (var file in videoFiles) {
+        if (!currentVideos.any((video) => video.path == file.path)) {
+          final video = Video_Model(title: file.path.split('/').last, path: file.path);
+          await _databaseService.insertVideo(video);
+        }
+      }
     } catch (e) {
-      print("Error reading directory: $e");
+      print('Error fetching videos from local storage: $e');
     }
+  }
+
+  Future<List<FileSystemEntity>> _getLocalVideos() async {
+    List<String> directories = [
+      await ExternalPath.getExternalStoragePublicDirectory(ExternalPath.DIRECTORY_MOVIES),
+      await ExternalPath.getExternalStoragePublicDirectory(ExternalPath.DIRECTORY_DCIM),
+      await ExternalPath.getExternalStoragePublicDirectory(ExternalPath.DIRECTORY_DOWNLOADS),
+    ];
+
+    List<FileSystemEntity> videoFiles = [];
+
+    Future<void> scanDirectory(Directory dir) async {
+      try {
+        List<FileSystemEntity> entities = dir.listSync();
+        for (var entity in entities) {
+          if (entity is File && entity.path.endsWith('.mp4')) {
+            videoFiles.add(entity);
+          } else if (entity is Directory) {
+            await scanDirectory(entity);
+          }
+        }
+      } catch (e) {
+        print('Error scanning directory: $e');
+      }
+    }
+
+    for (var path in directories) {
+      Directory dir = Directory(path);
+      if (await dir.exists()) {
+        await scanDirectory(dir);
+      }
+    }
+
     return videoFiles;
+  }
+
+  Future<List<Video_Model>> _fetchVideosFromDatabase() async {
+    return await _databaseService.getVideos();
+  }
+
+  Future<String?> _getVideoThumbnail(String videoPath) async {
+    try {
+      final thumbnailPath = await VideoThumbnail.thumbnailFile(
+        video: videoPath,
+        thumbnailPath: (await getTemporaryDirectory()).path,
+        imageFormat: ImageFormat.PNG,
+        quality: 100,
+      );
+      return thumbnailPath;
+    } catch (e) {
+      print('Error generating thumbnail: $e');
+      return null;
+    }
   }
 
   @override
@@ -90,106 +139,138 @@ class _VideoPageState extends State<VideoPage> {
             return const Center(child: CircularProgressIndicator());
           } else if (snapshot.hasError) {
             return const Center(child: Text('Error checking permission'));
-          } else if (snapshot.hasData) {
-            final isGranted = snapshot.data!;
-            if (isGranted) {
-              return _buildVideoGrid();
-            } else {
-              return const Center(
-                child: Text('Permission Denied', style: TextStyle(fontSize: 24)),
-              );
+          } else if (snapshot.hasData && snapshot.data!) {
+            if (!_videosFetched) {
+              _fetchVideosIfNeeded(); // Fetch videos once permission is granted
             }
+
+            return FutureBuilder<List<Video_Model>>(
+              future: _videoListFuture,
+              builder: (context, videoSnapshot) {
+                if (videoSnapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                } else if (videoSnapshot.hasError) {
+                  return const Center(child: Text('Error loading videos'));
+                } else if (videoSnapshot.hasData && videoSnapshot.data!.isNotEmpty) {
+                  return _buildVideoGrid(videoSnapshot.data!);
+                } else {
+                  return const Center(child: Text('No videos found', style: TextStyle(fontSize: 24)));
+                }
+              },
+            );
           } else {
-            return const Center(child: Text('Unknown status'));
+            return const Center(child: Text('Permission Denied', style: TextStyle(fontSize: 24)));
           }
         },
       ),
     );
   }
 
-  Widget _buildVideoGrid() {
-    if (_videoFiles.isEmpty) {
-      return const Center(
-        child: Text('No videos found', style: TextStyle(fontSize: 24)),
-      );
-    }
-
+  Widget _buildVideoGrid(List<Video_Model> videoList) {
     return GridView.builder(
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2, // Number of columns
-        crossAxisSpacing: 8.0, // Horizontal spacing between items
-        mainAxisSpacing: 8.0, // Vertical spacing between items
-        childAspectRatio: 16 / 9, // Aspect ratio of the grid items
+        crossAxisCount: 2,
+        crossAxisSpacing: 16.0,
+        mainAxisSpacing: 16.0,
+        childAspectRatio: 1.2,
       ),
-      itemCount: _videoFiles.length,
+      itemCount: videoList.length,
       itemBuilder: (context, index) {
-        String filePath = _videoFiles[index].path;
-        String fileName = filePath.split('/').last;
-        int fileSize = File(filePath).lengthSync(); // Get file size in bytes
+        String filePath = videoList[index].path;
+        String fileName = videoList[index].title;
 
-        return GestureDetector(
-          onTap: () {
-            // Navigate to VideoPlayerScreen when a video tile is tapped
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => VideoPlayerScreen(videoPath: filePath),
-              ),
-            );
-          },
-          child: Container(
-            decoration: BoxDecoration(
-              border: Border.all(
-                color: Colors.accents[index % Colors.accents.length], // Different color for each item
-                width: 2.0, // Border thickness
-              ),
-            ),
-            child: GridTile(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12.0),
-                child: VTImageView(
-                  videoUrl: filePath,
-                  errorBuilder: (context, error, stack) {
-                    return Container(
-                      // color: Colors.redAccent, // Placeholder background color
-                      child: const Center(
-                        child: Text(
-                          "Thumbnail Error",
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
-                    );
-                  },
-                  assetPlaceHolder: './assets/logo.png',
+        return FutureBuilder<String?>(
+          future: _getVideoThumbnail(filePath),
+          builder: (context, snapshot) {
+            Widget thumbnailWidget;
+
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              thumbnailWidget = const Center(child: CircularProgressIndicator());
+            } else if (snapshot.hasError || snapshot.data == null || !File(snapshot.data!).existsSync()) {
+              thumbnailWidget = _buildDefaultThumbnail();
+            } else {
+              thumbnailWidget = ClipRRect(
+                borderRadius: BorderRadius.circular(1.0),
+                child: Image.file(
+                  File(snapshot.data!),
+                  fit: BoxFit.cover,
                 ),
-              ),
-              footer: Container(
+              );
+            }
+
+            return GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => VideoPlayerScreen(videoPath:
+                    filePath, videoTitle: fileName),
+                  ),
+                );
+              },
+              child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.7),
-                ),
-                padding: const EdgeInsets.symmetric(
-                                            vertical: 2.0,
-                                            horizontal: 3.0
+                  gradient: const LinearGradient(
+                    colors: [Colors.blue, Colors.white, Colors.yellow],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(12.0),
                 ),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      fileName,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
+                    Expanded(
+                      child: ClipRRect(
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            thumbnailWidget,
+                            const Icon(
+                              Icons.play_circle_outline,
+                              size: 50.0,
+                              color: Colors.white,
+                            ),
+                          ],
+                        ),
                       ),
-                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(4.0),
+                      child: SizedBox(
+                        child: Text(
+                          fileName,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                     ),
                   ],
                 ),
               ),
-            ),
-          ),
+            );
+          },
         );
       },
+    );
+  }
+
+  Widget _buildDefaultThumbnail() {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12.0),
+      child: Container(
+        color: Colors.grey[800],
+        child: Center(
+          child: Image.asset(
+            'assets/logo.png', // Replace with your app logo path
+            fit: BoxFit.cover,
+          ),
+        ),
+      ),
     );
   }
 }

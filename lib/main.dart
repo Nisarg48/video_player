@@ -10,7 +10,6 @@ void main() {
   runApp(MaterialApp(
     debugShowCheckedModeBanner: false,
     home: const SplashScreen(),
-
     themeMode: ThemeMode.dark,
     theme: ThemeData.dark().copyWith(
       primaryColor: Colors.blueAccent,
@@ -34,7 +33,7 @@ class _MyHomePageState extends State<MyHomePage> {
   int _currentIndex = 0;
 
   final List<Widget> _pages = [
-    VideoPage(),
+    const VideoPage(),
     const PlaylistPage(),
     const BrowsePage(),
     const SettingPage(),
@@ -50,7 +49,6 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        // backgroundColor: Colors.black,
         title: const Row(
           children: [
             Image(
@@ -64,12 +62,10 @@ class _MyHomePageState extends State<MyHomePage> {
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 0.0,
-                // color: Colors.black,
               ),
             ),
           ],
         ),
-
         actions: [
           IconButton(
               onPressed: () {},
@@ -81,10 +77,13 @@ class _MyHomePageState extends State<MyHomePage> {
           )
         ],
       ),
-
-      body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 300),
-        child: _pages[_currentIndex],
+      body: Padding(
+        padding: const EdgeInsets.all(10.0), // Adjust the padding value as
+        // needed
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          child: _pages[_currentIndex],
+        ),
       ),
       bottomNavigationBar: BottomNavBar(
         currentIndex: _currentIndex,
@@ -123,10 +122,6 @@ class BottomNavBar extends StatelessWidget {
         BottomNavigationBarItem(
           icon: Icon(Icons.playlist_play_rounded),
           label: 'Playlist',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Bootstrap.folder),
-          label: 'Browse',
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.settings),

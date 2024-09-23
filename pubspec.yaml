@@ -53,10 +53,13 @@ dependencies:
   video_thumbnail_imageview: ^0.0.6
   #A Flutter plugin for iOS, Android and Web for playing back video on a Widget surface.
   video_player: ^2.9.1
-  #Make text to move
-  marqueer: ^1.4.5
-
-
+  #The video_player plugin provides low-level access to video playback. Chewie uses the video_player under the hood and wraps it in a friendly Material or Cupertino UI!
+  chewie: ^1.8.5
+  sqflite: ^2.3.3+1
+  path: ^1.9.0
+  video_thumbnail: ^0.5.3
+  volume_controller: ^2.0.8
+  screen_brightness: ^1.0.1
 
 
 

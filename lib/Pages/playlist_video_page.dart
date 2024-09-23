@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../Model/playlist_model.dart';
 import '../Database/database_service.dart';
-import 'video_selection_page.dart';
+import './video_selection_page.dart';
+import '../Model/video_model.dart';
+import './video_grid.dart';
 
 class PlaylistVideoPage extends StatefulWidget {
   final Playlist_Model playlist;
@@ -14,7 +16,7 @@ class PlaylistVideoPage extends StatefulWidget {
 }
 
 class _PlaylistVideoPageState extends State<PlaylistVideoPage> {
-  List<String> videoPaths = [];
+  List<Video_Model> videoList = []; // Change to List<Video_Model>
 
   @override
   void initState() {
@@ -23,21 +25,33 @@ class _PlaylistVideoPageState extends State<PlaylistVideoPage> {
   }
 
   Future<void> _loadVideos() async {
-    final videos = await DatabaseService().getVideoPathsForPlaylist(widget.playlist.id!);
+    final paths = await DatabaseService().getVideoPathsForPlaylist(widget.playlist.id!);
+
+    // Convert the list of paths to a list of Video_Model
+    videoList = paths.map((path) => Video_Model(path: path, title: _extractTitleFromPath(path))).toList();
+
     setState(() {
-      videoPaths = videos;
+      videoList = videoList;
     });
   }
 
+  String _extractTitleFromPath(String path) {
+    return path.split('/').last; // Get the file name from the path
+  }
+
   void _goToVideoSelection() async {
-    await Navigator.push(
+    final videoAdded = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => VideoSelectionPage(playlistId: widget.playlist.id!),
       ),
     );
-    _loadVideos(); // Refresh the video list after returning from selection page
-    widget.onVideoAdded();
+
+    // If video was added, reload the video list
+    if (videoAdded == true) {
+      _loadVideos(); // Refresh the video list after returning from selection page
+      widget.onVideoAdded(); // Call callback if video was added
+    }
   }
 
   @override
@@ -52,23 +66,9 @@ class _PlaylistVideoPageState extends State<PlaylistVideoPage> {
           )
         ],
       ),
-      body: videoPaths.isEmpty
+      body: videoList.isEmpty
           ? const Center(child: Text('No Videos in Playlist'))
-          : ListView.builder(
-        itemCount: videoPaths.length,
-        itemBuilder: (context, index) {
-          return ListTile(
-            title: Text(videoPaths[index]),
-            trailing: IconButton(
-              icon: const Icon(Icons.delete),
-              onPressed: () async {
-                await DatabaseService().removeVideoFromPlaylist(widget.playlist.id!, videoPaths[index]);
-                _loadVideos(); // Refresh the video list after deletion
-              },
-            ),
-          );
-        },
-      ),
+          : VideoGrid(videoList: videoList), // Pass the list to VideoGrid
     );
   }
 }

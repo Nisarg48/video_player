@@ -45,7 +45,7 @@ class _VideoSelectionPageState extends State<VideoSelectionPage> {
     } else {
       await DatabaseService().addVideoToPlaylist(widget.playlistId, videoPath);
       setState(() {
-        selectedVideoPaths.add(videoPath); // Update UI when the video is added
+        selectedVideoPaths.add(videoPath);
       });
     }
   }
@@ -59,7 +59,8 @@ class _VideoSelectionPageState extends State<VideoSelectionPage> {
           IconButton(
             icon: const Icon(Icons.done),
             onPressed: () {
-              Navigator.pop(context);
+              // Pop back to the Playlist page and pass a boolean indicating videos were added
+              Navigator.pop(context, selectedVideoPaths.isNotEmpty);
             },
           )
         ],

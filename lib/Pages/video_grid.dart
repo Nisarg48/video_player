@@ -70,7 +70,11 @@ class VideoGrid extends StatelessWidget {
               return Container(
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [Colors.blue, Colors.white, Colors.yellow],
+                    colors: [
+                      Colors.cyanAccent,
+                      Colors.purple,
+                      Colors.pinkAccent,
+                    ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
@@ -102,7 +106,7 @@ class VideoGrid extends StatelessWidget {
                           style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
-                            color: Colors.black,
+                            color: Colors.white,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,

@@ -84,26 +84,26 @@ class _PlaylistPageState extends State<PlaylistPage> {
       body: playlists.isEmpty
           ? const Center(child: Text('No Playlists'))
           : ListView.builder(
-        itemCount: playlists.length,
-        itemBuilder: (context, index) {
-          return Card(
-            margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
-            elevation: 4,
-            child: ListTile(
-              title: Text(
-                playlists[index].name,
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-              subtitle: Text('${playlists[index].videoPaths.length} videos'),
-              trailing: IconButton(
-                icon: const Icon(Icons.delete),
-                color: Colors.red,
-                onPressed: () => _deletePlaylist(playlists[index].id!),
-              ),
-              onTap: () => _showPlaylistVideos(playlists[index]),
-            ),
-          );
-        },
+              itemCount: playlists.length,
+              itemBuilder: (context, index) {
+                return Card(
+                  margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+                  elevation: 4,
+                  child: ListTile(
+                    title: Text(
+                      playlists[index].name,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    subtitle: Text('${playlists[index].videoPaths.length} videos'),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.delete),
+                      color: Colors.red,
+                      onPressed: () => _deletePlaylist(playlists[index].id!),
+                    ),
+                    onTap: () => _showPlaylistVideos(playlists[index]),
+                  ),
+                );
+              },
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _addPlaylist,

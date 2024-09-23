@@ -18,7 +18,7 @@ class DatabaseService {
   }
 
   Future<Database> _initDB() async {
-    String path = join(await getDatabasesPath(), 'video_database.db');
+    String path = join(await getDatabasesPath(), 'VideoPlayFlix_Database.db');
     return await openDatabase(
       path,
       version: 1,
@@ -81,32 +81,21 @@ class DatabaseService {
 
   /// Fetch playlists from SQLite
   Future<List<Playlist_Model>> getPlaylists() async {
-    // Replace with actual database querying code
-    final db = await _getDatabase();
+    final db = await database; // Use the common database
     final List<Map<String, dynamic>> playlistData = await db.query('playlists');
     return playlistData.map((data) => Playlist_Model.fromMap(data)).toList();
   }
 
   /// Create a playlist in SQLite
   Future<void> createPlaylist(String name) async {
-    final db = await _getDatabase();
-    await db.insert('playlists', {'name': name}); // Insert into 'playlists' table
+    final db = await database;
+    await db.insert('playlists', {'name': name, 'videoPaths': ''}); // Initialize with empty videoPaths
   }
 
   /// Delete a playlist from SQLite
   Future<void> deletePlaylist(int playlistId) async {
-    final db = await _getDatabase();
+    final db = await database;
     await db.delete('playlists', where: 'id = ?', whereArgs: [playlistId]); // Delete by ID
-  }
-
-  /// Helper to get the database instance
-  Future<Database> _getDatabase() async {
-    // Open or initialize your SQLite database
-    return openDatabase('playlists.db', version: 1,
-        onCreate: (Database db, int version) async {
-          await db.execute(
-              'CREATE TABLE playlists (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)');
-        });
   }
 
   // Insert a video path into the playlist
@@ -168,7 +157,7 @@ class DatabaseService {
     }
   }
 
-// Fetch video paths for a specific playlist
+  // Fetch video paths for a specific playlist
   Future<List<String>> getVideoPathsForPlaylist(int playlistId) async {
     final db = await database;
 
@@ -185,6 +174,4 @@ class DatabaseService {
 
     return [];
   }
-
-
 }
